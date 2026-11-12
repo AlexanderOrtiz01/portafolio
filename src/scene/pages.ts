@@ -403,8 +403,9 @@ function drawFrontEndpaper(ctx: Ctx, c: Content) {
 
 function drawBackEndpaper(ctx: Ctx, c: Content) {
   cloth(ctx, '#161514', 9);
-  text(ctx, c.back.thanks, 114, 470, { font: display(92), color: FG, spacing: -3 });
-  line(ctx, 120, 520, 760, 520, 'rgba(243,242,238,0.25)', 2);
+  c.back.thanks.forEach((l, i) => text(ctx, l, 114, 410 + i * 100, { font: display(92), color: FG, spacing: -3 }));
+  line(ctx, 120, 560, 760, 560, 'rgba(243,242,238,0.25)', 2);
+  text(ctx, c.back.sign, 120, 620, { font: mono(20, 500), color: ACCENT, spacing: 3 });
 }
 
 /* ------------------------------------------------------------ page set */

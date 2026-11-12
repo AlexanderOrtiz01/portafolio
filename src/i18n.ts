@@ -82,7 +82,8 @@ export interface Content {
     locationLabel: string;
     location: string;
   };
-  back: { thanks: string };
+  /** The closing words on the back endpaper, one string per line. */
+  back: { thanks: string[]; sign: string };
   terminal: [string, string][];
   viz: Record<string, string>;
 }
@@ -316,7 +317,7 @@ const es: Content = {
     locationLabel: 'UBICACIÓN',
     location: 'El Salvador',
   },
-  back: { thanks: 'Gracias por leer.' },
+  back: { thanks: ['¿Construimos algo', 'y lo probamos?'], sign: 'ESCRÍBEME Y LO HABLAMOS' },
   terminal: [
     ['whoami', 'edwin villalta · desarrollador de software y qa analyst'],
     ['cat ahora.txt', 'app web institucional para el MINEDUCYT'],
@@ -598,7 +599,7 @@ const en: Content = {
     locationLabel: 'LOCATION',
     location: 'El Salvador',
   },
-  back: { thanks: 'Thanks for reading.' },
+  back: { thanks: ["Let's build something", 'and test it.'], sign: 'DROP ME A LINE' },
   terminal: [
     ['whoami', 'edwin villalta · software developer & qa analyst'],
     ['cat now.txt', 'institutional web app for MINEDUCYT'],
