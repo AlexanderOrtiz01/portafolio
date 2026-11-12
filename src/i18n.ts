@@ -54,8 +54,7 @@ export interface Content {
     location: string;
     langLabel: string;
     canvasLabel: string;
-    noWebgl: string;
-    retry: string;
+    flatNote: string;
   };
   cover: { top: string; title: string; bottom: string; year: string };
   endpaper: { line1: string; line2: string; nav: string[] };
@@ -105,8 +104,7 @@ const es: Content = {
     location: 'El Salvador',
     langLabel: 'Idioma',
     canvasLabel: 'Libro 3D interactivo con el portafolio de Edwin Villalta',
-    noWebgl: 'El navegador no pudo iniciar los gráficos 3D. Recarga la página; si sigue igual, activa la aceleración por hardware.',
-    retry: 'Recargar',
+    flatNote: 'Vista 2D · este navegador no tiene gráficos 3D activos',
   },
   cover: {
     top: 'EDWIN VILLALTA',
@@ -389,8 +387,7 @@ const en: Content = {
     location: 'El Salvador',
     langLabel: 'Language',
     canvasLabel: "Interactive 3D book holding Edwin Villalta's portfolio",
-    noWebgl: 'The browser could not start the 3D graphics. Reload the page; if it persists, turn on hardware acceleration.',
-    retry: 'Reload',
+    flatNote: '2D view · this browser has no 3D graphics available',
   },
   cover: {
     top: 'EDWIN VILLALTA',

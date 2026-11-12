@@ -444,13 +444,22 @@ interface PageTex {
   st: DrawState;
 }
 
+/**
+ * Pages are drawn at full size on desktops and at three quarters on phones and low-memory devices,
+ * where twenty-one full-size textures would be a heavy load for the graphics memory.
+ */
+const lowPower =
+  ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4 ||
+  Math.min(screen.width, screen.height) <= 500;
+const K = lowPower ? 0.75 : 1;
+
 function makeTexture(w: number, h: number, aniso: number) {
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = Math.round(w * K);
+  canvas.height = Math.round(h * K);
   const ctx = canvas.getContext('2d')!;
   ctx.fillStyle = PAPER;
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = aniso;
@@ -520,9 +529,13 @@ export class PageSet {
   setContent(c: Content) {
     this.content = c;
     this.pages.forEach((_, i) => this.redraw(i));
-    drawCover(this.special[0], c);
-    drawFrontEndpaper(this.special[1], c);
-    drawBackEndpaper(this.special[2], c);
+    [drawCover, drawFrontEndpaper, drawBackEndpaper].forEach((draw, i) => {
+      const ctx = this.special[i];
+      ctx.save();
+      ctx.setTransform(K, 0, 0, K, 0, 0);
+      draw(ctx, c);
+      ctx.restore();
+    });
     this.cover.needsUpdate = this.front.needsUpdate = this.back.needsUpdate = true;
     this.dirty = true;
   }
@@ -530,10 +543,25 @@ export class PageSet {
   private redraw(id: number) {
     const p = this.pages[id];
     p.ctx.save();
+    p.ctx.setTransform(K, 0, 0, K, 0, 0);
     p.regions = p.def.draw(p.ctx, this.content, p.st);
     p.ctx.restore();
     p.texture.needsUpdate = true;
     this.dirty = true;
+  }
+
+  /** The canvas a page is drawn on, for showing the book without 3D. */
+  canvas(id: number) {
+    return this.pages[id].ctx.canvas;
+  }
+  get coverCanvas() {
+    return this.special[0].canvas;
+  }
+  get frontCanvas() {
+    return this.special[1].canvas;
+  }
+  get backCanvas() {
+    return this.special[2].canvas;
   }
 
   /** Every texture of the book, for uploading ahead of time. */

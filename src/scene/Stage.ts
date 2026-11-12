@@ -44,6 +44,7 @@ export class Stage {
   private stale = true;
   private idle = 0;
   private lost = false;
+  private lostTimer = 0;
   private lastEye = new THREE.Vector3();
   private cursor = '';
   /** Resolution scale, lowered a step at a time if the device cannot keep up. */
@@ -56,6 +57,8 @@ export class Stage {
     host: HTMLElement,
     content: Content,
     private onState: (s: StageState) => void,
+    /** Called if the graphics context is lost for good, so the page can fall back to the flat book. */
+    private onFail: () => void = () => {},
   ) {
     // The stage owns its canvas, so that leaving really does hand the graphics memory back.
     const canvas = document.createElement('canvas');
@@ -63,7 +66,24 @@ export class Stage {
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', content.ui.canvasLabel);
     this.canvas = canvas;
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    // Software rendering would run this scene at a frame or two a second: better to fail here and let
+    // the page show the flat book instead. `?gl=force` overrides that, for testing.
+    const force = new URLSearchParams(location.search).get('gl') === 'force';
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance',
+      failIfMajorPerformanceCaveat: !force,
+    });
+    // Not every browser honours that flag, so the renderer's own name is checked as well.
+    const gl = renderer.getContext();
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
+    if (!force && /swiftshader|llvmpipe|softpipe|software/i.test(name)) {
+      renderer.dispose();
+      renderer.forceContextLoss();
+      throw new Error(`Software renderer: ${name}`);
+    }
     host.prepend(canvas);
     renderer.setPixelRatio(this.ratio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -197,6 +217,7 @@ export class Stage {
 
   dispose() {
     cancelAnimationFrame(this.raf);
+    window.clearTimeout(this.lostTimer);
     this.observer.disconnect();
     const c = this.canvas;
     c.removeEventListener('pointermove', this.onMove);
@@ -228,9 +249,12 @@ export class Stage {
     // Without this the browser would never give the context back.
     ev.preventDefault();
     this.lost = true;
+    // Usually it comes back within a moment. If it does not, the graphics card is gone for this session.
+    this.lostTimer = window.setTimeout(() => this.lost && this.onFail(), 4000);
   };
 
   private onRestored = () => {
+    window.clearTimeout(this.lostTimer);
     this.lost = false;
     this.renderer.shadowMap.needsUpdate = true;
     this.stale = true;

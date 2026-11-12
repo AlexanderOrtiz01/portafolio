@@ -338,23 +338,80 @@ h1 {
   color: var(--dim);
 }
 
-.fallback {
+/* ------------------------------------------------- the book without 3D */
+
+.flat {
   position: absolute;
-  z-index: 3;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(88vw, 440px);
+  inset: 0;
   display: grid;
-  justify-items: center;
-  gap: 18px;
-  text-align: center;
-  color: var(--dim);
-  line-height: 1.5;
+  place-items: center;
+  background: radial-gradient(ellipse 80% 70% at 50% 42%, #33271c 0%, #17110c 46%, #000 100%);
+  animation: flat-in 1s ease both;
 }
 
-.fallback p {
-  margin: 0;
+.flat canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.flat-cover {
+  width: min(46vw, 62vh);
+  aspect-ratio: 1440 / 944;
+  margin-bottom: 14vh;
+  overflow: hidden;
+  border-radius: 3px;
+  transform: rotate(-4deg);
+  box-shadow: 0 34px 70px rgba(0, 0, 0, 0.75), 0 2px 0 rgba(255, 255, 255, 0.06) inset;
+  transition: transform 0.5s var(--ease);
+}
+
+.flat-cover:hover {
+  transform: rotate(-2deg) translateY(-6px);
+}
+
+.flat-spread {
+  display: flex;
+  width: min(94vw, (100vh - 230px) * 3.2);
+  aspect-ratio: 32 / 10;
+  margin-bottom: 3vh;
+  box-shadow: 0 34px 80px rgba(0, 0, 0, 0.8);
+  animation: flat-in 0.35s ease both;
+}
+
+.flat-page {
+  flex: 1;
+  cursor: pointer;
+  background: var(--paper);
+}
+
+.flat[data-open='true'] .flat-cover,
+.flat[data-open='false'] .flat-spread {
+  display: none;
+}
+
+.flat[data-single='true'] .flat-spread {
+  width: min(94vw, (100vh - 230px) * 1.6);
+  aspect-ratio: 16 / 10;
+}
+
+.flat[data-single='true'] .flat-cover {
+  width: min(78vw, 50vh);
+}
+
+.flat[data-single='true'][data-side='L'] .flat-page:last-child,
+.flat[data-single='true'][data-side='R'] .flat-page:first-child {
+  display: none;
+}
+
+@keyframes flat-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.app[data-mode='flat'] .vignette {
+  display: none;
 }
 
 .sr-only {

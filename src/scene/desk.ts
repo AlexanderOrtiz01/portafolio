@@ -63,7 +63,8 @@ function grain(ctx: CanvasRenderingContext2D, size: number, bump: boolean) {
 export function makeDesk(aniso: number) {
   const size = 2048;
   const map = canvasTexture(size, size, (ctx) => grain(ctx, size, false));
-  const bump = canvasTexture(size, size, (ctx) => grain(ctx, size, true), false);
+  // The relief is the same drawing at half the size: it only has to roughen the light.
+  const bump = canvasTexture(size / 2, size / 2, (ctx) => (ctx.scale(0.5, 0.5), grain(ctx, size, true)), false);
   for (const t of [map, bump]) {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(7, 12);
