@@ -72,7 +72,8 @@ export class Stage {
     const renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
-      powerPreference: 'high-performance',
+      // No powerPreference: asking for 'high-performance' leaves the canvas black under ANGLE on
+      // Vulkan with integrated AMD graphics, even though the scene draws correctly.
       failIfMajorPerformanceCaveat: !force,
     });
     // Not every browser honours that flag, so the renderer's own name is checked as well.
@@ -81,7 +82,6 @@ export class Stage {
     const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
     if (!force && /swiftshader|llvmpipe|softpipe|software/i.test(name)) {
       renderer.dispose();
-      renderer.forceContextLoss();
       throw new Error(`Software renderer: ${name}`);
     }
     host.prepend(canvas);
@@ -240,8 +240,9 @@ export class Stage {
     });
     this.scene.environment?.dispose();
     this.lamp.shadow.map?.dispose();
+    // No forceContextLoss here: browsers count a deliberate loss against the page and may then
+    // refuse it WebGL for the rest of the session. Dropping the canvas frees the context anyway.
     this.renderer.dispose();
-    this.renderer.forceContextLoss();
     c.remove();
   }
 
