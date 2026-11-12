@@ -104,7 +104,7 @@ const es: Content = {
     location: 'El Salvador',
     langLabel: 'Idioma',
     canvasLabel: 'Libro 3D interactivo con el portafolio de Edwin Villalta',
-    flatNote: 'Vista 2D · este navegador no tiene gráficos 3D activos',
+    flatNote: 'Clic en una mitad para pasar la página · teclas ← →',
   },
   cover: {
     top: 'EDWIN VILLALTA',
@@ -387,7 +387,7 @@ const en: Content = {
     location: 'El Salvador',
     langLabel: 'Language',
     canvasLabel: "Interactive 3D book holding Edwin Villalta's portfolio",
-    flatNote: '2D view · this browser has no 3D graphics available',
+    flatNote: 'Click either half to turn the page · ← → keys',
   },
   cover: {
     top: 'EDWIN VILLALTA',

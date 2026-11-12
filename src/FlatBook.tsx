@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type MutableRefObject, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import type { Content } from './i18n';
+import { grain } from './scene/desk';
 import { PageSet, SHEETS } from './scene/pages';
 import type { StageState } from './scene/Stage';
 
@@ -13,9 +14,18 @@ export interface BookControls {
 
 type Side = 'L' | 'R';
 
+/** The lacquered oak, drawn once and used as the desk's background. */
+function woodUrl() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 1024;
+  grain(c.getContext('2d')!, 1024, false);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+
 /**
- * The same book without 3D, for browsers that cannot start the graphics card: the page canvases
- * are simply laid side by side. Contents links, films on hover and the keyboard all still work.
+ * The same book built from CSS 3D transforms instead of WebGL, for browsers whose graphics card is
+ * off. The cover swings open, pages turn on their spine, the view leans toward the cursor, and the
+ * films still play on hover. It only needs the browser's compositor, which runs without a GPU.
  */
 export function FlatBook({
   content,
@@ -31,16 +41,11 @@ export function FlatBook({
   const [side, setSide] = useState<Side>('R');
   const [single, setSingle] = useState(() => window.innerWidth < window.innerHeight);
   const pagesRef = useRef<PageSet | null>(null);
-  const coverRef = useRef<HTMLButtonElement>(null);
-  const leftRef = useRef<HTMLDivElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
   const pages = (pagesRef.current ??= new PageSet(1));
-
-  /** Page id shown on one side, or -1 when that side shows the inside of a cover. */
-  const pageId = (s: Side) => {
-    const id = s === 'L' ? spread * 2 - 1 : spread * 2;
-    return id >= 0 && id < SHEETS * 2 ? id : -1;
-  };
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const slots = useRef<(HTMLDivElement | null)[]>([]);
+  const prevSpread = useRef(0);
+  const wood = useMemo(woodUrl, []);
 
   const api: BookControls = {
     open: () => {
@@ -77,23 +82,23 @@ export function FlatBook({
     pages.setContent(content);
   }, [pages, content]);
 
-  // The canvases belong to the page set; here they are only moved into place.
+  // Each canvas lives in exactly one face of the book: slot 0 is the cover, 1 the front endpaper,
+  // 2 the back endpaper, and 3 + n page n.
   useEffect(() => {
-    const put = (slot: HTMLElement | null, canvas: HTMLCanvasElement) => {
-      if (slot && slot.firstChild !== canvas) slot.replaceChildren(canvas);
-    };
-    put(coverRef.current, pages.coverCanvas);
-    put(leftRef.current, spread > 0 ? pages.canvas(spread * 2 - 1) : pages.frontCanvas);
-    put(rightRef.current, spread < SHEETS ? pages.canvas(spread * 2) : pages.backCanvas);
-    // Without a cursor there is no hover: the film on show simply plays.
-    const noHover = window.matchMedia('(hover: none)').matches;
-    pages.hover(noHover && open && spread < SHEETS ? spread * 2 : -1);
-  }, [pages, open, spread]);
+    const canvases = [pages.coverCanvas, pages.frontCanvas, pages.backCanvas];
+    for (let i = 0; i < SHEETS * 2; i++) canvases.push(pages.canvas(i));
+    canvases.forEach((c, i) => {
+      const slot = slots.current[i];
+      if (slot && slot.firstChild !== c) slot.replaceChildren(c);
+    });
+  }, [pages]);
 
   useEffect(() => {
+    const noHover = window.matchMedia('(hover: none)').matches;
+    pages.hover(noHover && open && spread < SHEETS ? spread * 2 : -1);
     const atEnd = spread >= SHEETS && (!single || side === 'R');
     onState({ open, spread, spreads: SHEETS + 1, canNext: !atEnd });
-  }, [onState, open, spread, side, single]);
+  }, [pages, onState, open, spread, side, single]);
 
   useEffect(() => {
     let raf = 0;
@@ -113,55 +118,102 @@ export function FlatBook({
       else if (ev.key === 'Escape') c?.close();
       else if (ev.key === 'Home') c?.goto(0);
       else if (ev.key === 'End') c?.goto(SHEETS);
+      else if (ev.key === 'Enter' && !(ev.target instanceof HTMLButtonElement)) c?.open();
       else return;
       ev.preventDefault();
     };
+    // The view leans toward the cursor, written straight to CSS variables to skip re-rendering.
+    const onMove = (ev: PointerEvent) => {
+      const el = sceneRef.current;
+      if (!el || ev.pointerType !== 'mouse') return;
+      el.style.setProperty('--lx', ((ev.clientX / window.innerWidth) * 2 - 1).toFixed(3));
+      el.style.setProperty('--ly', ((ev.clientY / window.innerHeight) * 2 - 1).toFixed(3));
+    };
     window.addEventListener('resize', onResize);
     window.addEventListener('keydown', onKey);
+    window.addEventListener('pointermove', onMove);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointermove', onMove);
       pages.dispose();
     };
   }, [pages, controls]);
 
-  /** Where on the page the pointer is, as fractions from its top-left corner. */
-  const at = (ev: PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
+  // When several leaves move at once they go one after another, in the direction of travel.
+  const from = prevSpread.current;
+  useEffect(() => {
+    prevSpread.current = spread;
+  }, [spread]);
+  const forward = spread >= from;
+
+  const at = (ev: React.MouseEvent<HTMLElement>) => {
     const r = ev.currentTarget.getBoundingClientRect();
     return [(ev.clientX - r.left) / r.width, (ev.clientY - r.top) / r.height] as const;
   };
 
-  const page = (s: Side, ref: typeof leftRef) => (
+  /** One face showing page `id`: it plays its film on hover and follows its links on click. */
+  const face = (id: number, back: boolean) => (
     <div
-      className="flat-page"
-      ref={ref}
-      onPointerMove={(ev) => {
-        if (ev.pointerType === 'mouse') pages.hover(pageId(s), ...at(ev));
-      }}
-      onPointerLeave={(ev) => {
-        if (ev.pointerType === 'mouse') pages.hover(-1);
-      }}
+      className={back ? 'fb-face fb-back' : 'fb-face'}
+      ref={(el) => (slots.current[3 + id] = el)}
+      onPointerMove={(ev) => ev.pointerType === 'mouse' && pages.hover(id, ...at(ev))}
+      onPointerLeave={(ev) => ev.pointerType === 'mouse' && pages.hover(-1)}
       onClick={(ev) => {
-        const id = pageId(s);
+        ev.stopPropagation();
         const [u, v] = at(ev);
-        const action = id >= 0 ? pages.actionAt(id, u, v) : null;
+        const action = pages.actionAt(id, u, v);
         if (action?.type === 'goto') api.goto(action.spread);
         else if (action?.type === 'link') {
           if (action.href.startsWith('mailto:')) window.location.href = action.href;
           else window.open(action.href, '_blank', 'noopener');
-        } else if (single ? u >= 0.5 : s === 'R') api.next();
+        } else if (single ? u >= 0.5 : !back) api.next();
         else api.prev();
       }}
     />
   );
 
   return (
-    <div className="flat" data-open={open} data-single={single} data-side={side}>
-      <button type="button" className="flat-cover" ref={coverRef} aria-label={content.ui.open} onClick={api.open} />
-      <div className="flat-spread" key={`${spread}${single ? side : ''}`}>
-        {page('L', leftRef)}
-        {page('R', rightRef)}
+    <div className="fb" style={{ backgroundImage: `url(${wood})` }}>
+      <div className="fb-light" />
+      <div className="fb-scene" ref={sceneRef} data-open={open} data-single={single} data-side={side}>
+        <div className="fb-book">
+          <div className="fb-board fb-base" ref={(el) => (slots.current[2] = el)} onClick={() => api.next()} />
+          <div
+            className="fb-leaf fb-cover"
+            data-turned={open}
+            style={{ zIndex: open ? 0 : SHEETS * 2 + 2 }}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              if (open) api.prev();
+              else api.open();
+            }}
+          >
+            <div className="fb-face fb-board" ref={(el) => (slots.current[0] = el)} />
+            <div className="fb-face fb-back fb-board" ref={(el) => (slots.current[1] = el)} />
+          </div>
+          {Array.from({ length: SHEETS }, (_, i) => {
+            const turned = open && i < spread;
+            const lo = Math.min(from, spread);
+            const order = forward ? i - lo : Math.max(from, spread) - 1 - i;
+            const delay = i >= lo && i < Math.max(from, spread) ? Math.max(0, order) * 0.09 : 0;
+            return (
+              <div
+                key={i}
+                className="fb-leaf"
+                data-turned={turned}
+                style={{
+                  zIndex: turned ? i + 1 : SHEETS * 2 - i,
+                  transitionDelay: `${delay}s, ${delay + 0.42}s`,
+                }}
+              >
+                {face(i * 2, false)}
+                {face(i * 2 + 1, true)}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

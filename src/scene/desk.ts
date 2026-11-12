@@ -22,7 +22,7 @@ const shadow = <T extends THREE.Object3D>(o: T) => {
 
 /* ---------------------------------------------------------------- desk */
 
-function grain(ctx: CanvasRenderingContext2D, size: number, bump: boolean) {
+export function grain(ctx: CanvasRenderingContext2D, size: number, bump: boolean) {
   const r = rng(11);
   ctx.fillStyle = bump ? '#808080' : '#2e241a';
   ctx.fillRect(0, 0, size, size);

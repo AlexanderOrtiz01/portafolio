@@ -338,73 +338,172 @@ h1 {
   color: var(--dim);
 }
 
-/* ------------------------------------------------- the book without 3D */
+/* ----------------------------------------- the book in CSS 3D, without WebGL */
 
-.flat {
+.fb {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  background: radial-gradient(ellipse 80% 70% at 50% 42%, #33271c 0%, #17110c 46%, #000 100%);
-  animation: flat-in 1s ease both;
+  overflow: hidden;
+  background-color: #17120d;
+  background-size: 520px;
+  animation: fb-in 1.2s ease both;
 }
 
-.flat canvas {
+/* The pool of lamplight: everything outside it falls into the dark. */
+.fb-light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 52% 58% at 50% 44%, rgba(255, 214, 160, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 75% 75% at 50% 44%, transparent 30%, rgba(0, 0, 0, 0.72) 74%, #000 100%);
+}
+
+.fb-scene {
+  --lx: 0;
+  --ly: 0;
+  --page: min(46vw, (100vh - 230px) * 1.6);
+  position: absolute;
+  inset: 0;
+  perspective: 2600px;
+  perspective-origin: 50% 30%;
+}
+
+/* Centred by its margins, not by the grid: on phones the book is wider than the screen. */
+.fb-book {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 2vh);
+  width: calc(var(--page) * 2);
+  height: calc(var(--page) * 0.625);
+  margin-left: calc(var(--page) * -1);
+  margin-top: calc(var(--page) * -0.3125);
+  transform-style: preserve-3d;
+  transition: transform 1.3s cubic-bezier(0.65, 0, 0.2, 1);
+  /* Closed: the book lies on the desk, seen at an angle, a little askew, cover in the middle. */
+  transform: translateX(calc(var(--page) * -0.5)) rotateX(calc(42deg - var(--ly) * 4deg))
+    rotateY(calc(var(--lx) * 5deg)) rotateZ(-4deg) scale(0.78);
+}
+
+.fb-scene[data-open='true'] .fb-book {
+  transform: rotateX(calc(14deg - var(--ly) * 2deg)) rotateY(calc(var(--lx) * 2.5deg));
+}
+
+/* Upright screens frame one page at a time, sliding to the side being read. */
+.fb-scene[data-single='true'] {
+  --page: min(92vw, (100vh - 260px) * 1.6);
+}
+.fb-scene[data-single='true'][data-open='true'][data-side='R'] .fb-book {
+  transform: translateX(calc(var(--page) * -0.5)) rotateX(8deg);
+}
+.fb-scene[data-single='true'][data-open='true'][data-side='L'] .fb-book {
+  transform: translateX(calc(var(--page) * 0.5)) rotateX(8deg);
+}
+
+.fb-leaf,
+.fb-base {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+}
+
+.fb-leaf {
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  /* The leaf swaps places in the stack halfway through its turn, when it stands on edge. */
+  transition:
+    transform 0.9s cubic-bezier(0.55, 0.05, 0.25, 1),
+    z-index 0s linear;
+}
+
+.fb-leaf[data-turned='true'] {
+  transform: rotateY(-180deg);
+}
+
+.fb-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--paper);
+  backface-visibility: hidden;
+}
+
+.fb-back {
+  transform: rotateY(180deg);
+}
+
+/* Paper darkens toward the spine and catches light at its edge while it turns. */
+.fb-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(40, 28, 16, 0.22), transparent 9%);
+}
+.fb-back::after {
+  background: linear-gradient(270deg, rgba(40, 28, 16, 0.22), transparent 9%);
+}
+
+.fb-face canvas,
+.fb-board canvas {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.flat-cover {
-  width: min(46vw, 62vh);
-  aspect-ratio: 1440 / 944;
-  margin-bottom: 14vh;
-  overflow: hidden;
-  border-radius: 3px;
-  transform: rotate(-4deg);
-  box-shadow: 0 34px 70px rgba(0, 0, 0, 0.75), 0 2px 0 rgba(255, 255, 255, 0.06) inset;
-  transition: transform 0.5s var(--ease);
+.fb-board {
+  background: #0b0b0b;
 }
 
-.flat-cover:hover {
-  transform: rotate(-2deg) translateY(-6px);
+/* Boards overhang the pages a little. */
+.fb-base,
+.fb-cover {
+  top: -2.4%;
+  height: 104.8%;
 }
 
-.flat-spread {
-  display: flex;
-  width: min(94vw, (100vh - 230px) * 3.2);
-  aspect-ratio: 32 / 10;
-  margin-bottom: 3vh;
-  box-shadow: 0 34px 80px rgba(0, 0, 0, 0.8);
-  animation: flat-in 0.35s ease both;
+.fb-base {
+  box-shadow:
+    0 50px 90px rgba(0, 0, 0, 0.75),
+    -4px 0 0 #0b0b0b;
 }
 
-.flat-page {
-  flex: 1;
-  cursor: pointer;
-  background: var(--paper);
+.fb-cover > .fb-face {
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
 }
 
-.flat[data-open='true'] .flat-cover,
-.flat[data-open='false'] .flat-spread {
-  display: none;
+.fb-cover > .fb-face::after {
+  background: linear-gradient(115deg, rgba(255, 230, 190, 0.08), transparent 45%);
 }
 
-.flat[data-single='true'] .flat-spread {
-  width: min(94vw, (100vh - 230px) * 1.6);
-  aspect-ratio: 16 / 10;
+/* The right-hand pile shows its thickness; the left one appears once pages are turned. */
+.fb-book::before,
+.fb-book::after {
+  content: '';
+  position: absolute;
+  top: 0.4%;
+  height: 99.2%;
+  width: 50%;
+  background: repeating-linear-gradient(90deg, #e9e5db 0 2px, #d6d1c5 2px 3px);
+  transform: translateZ(-1px);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.fb-book::before {
+  left: 50.4%;
+}
+.fb-book::after {
+  right: 50.4%;
+  opacity: 0;
+  transition: opacity 0.4s 0.4s;
+}
+.fb-scene[data-open='true'] .fb-book::after {
+  opacity: 1;
 }
 
-.flat[data-single='true'] .flat-cover {
-  width: min(78vw, 50vh);
-}
-
-.flat[data-single='true'][data-side='L'] .flat-page:last-child,
-.flat[data-single='true'][data-side='R'] .flat-page:first-child {
-  display: none;
-}
-
-@keyframes flat-in {
+@keyframes fb-in {
   from {
     opacity: 0;
   }

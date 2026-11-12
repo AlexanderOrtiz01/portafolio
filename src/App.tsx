@@ -100,7 +100,7 @@ export default function App() {
       </section>
 
       <p className="hint hint-closed" aria-hidden="true">
-        {mode === 'flat' ? c.ui.flatNote : c.ui.hintClosed}
+        {c.ui.hintClosed}
       </p>
 
       <footer className="bar" aria-hidden={!open}>
