@@ -165,7 +165,7 @@ function arrow(ctx: Ctx, x: number, y: number, s: number, color: string) {
 
 const contentsPage: PageDraw = (ctx, c, st) => {
   paper(ctx, 'R');
-  header(ctx, c.contents.label, 'EDWIN VILLALTA — 2026');
+  header(ctx, c.contents.label, 'EDWIN VILLALTA · 2026');
   title(ctx, c.contents.title);
   const regions: Region[] = [];
   const top = 286;
@@ -196,7 +196,7 @@ const casePage =
   (ctx, c) => {
     const k = pick(c);
     paper(ctx, 'L');
-    header(ctx, `${pad2(index)} — ${k.kicker}`, k.when);
+    header(ctx, `${pad2(index)} · ${k.kicker}`, k.when);
     // Logos sit to the right of the title, laid out from the page edge inwards.
     let lw = 0;
     for (const key of [k.logo ?? []].flat().reverse()) {
@@ -268,7 +268,7 @@ const filmPage =
       ctx.fill();
     }
 
-    text(ctx, `FIG. ${pad2(index)} — ${pick(c).fig}`, PANEL.x + 4, 838, { font: mono(21, 500), spacing: 0.5 });
+    text(ctx, `FIG. ${pad2(index)} · ${pick(c).fig}`, PANEL.x + 4, 838, { font: mono(21, 500), spacing: 0.5 });
     const label = st.playing ? c.play.playing : c.play.idle;
     text(ctx, label, PW - 60, 838, { font: mono(19), color: MUTED, spacing: 2, align: 'right' });
     const lw = measure(ctx, label, mono(19), 2);
@@ -281,7 +281,7 @@ const filmPage =
 
 const skillsPage: PageDraw = (ctx, c) => {
   paper(ctx, 'L');
-  header(ctx, `08 — ${c.skills.kicker}`, 'EDWIN VILLALTA');
+  header(ctx, `08 · ${c.skills.kicker}`, 'EDWIN VILLALTA');
   title(ctx, c.skills.title);
   const colW = (PW - M * 2 - 80) / 2;
   c.skills.groups.forEach((g, i) => {
@@ -336,7 +336,7 @@ const educationPage: PageDraw = (ctx, c) => {
 const contactPage: PageDraw = (ctx, c, st) => {
   const k = c.contact;
   paper(ctx, 'L');
-  header(ctx, `09 — ${k.kicker}`, 'EDWIN VILLALTA');
+  header(ctx, `09 · ${k.kicker}`, 'EDWIN VILLALTA');
   text(ctx, k.title, M - 6, 290, { font: display(168), spacing: -6 });
   paragraph(ctx, k.body, M, 366, 900, 42, { font: sans(29), color: MUTED });
 

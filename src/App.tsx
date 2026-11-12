@@ -137,7 +137,7 @@ export default function App() {
             {tocEntries(c).map((e) => (
               <li key={e.spread}>
                 <button type="button" onClick={() => book.current?.goto(e.spread)}>
-                  {e.name} — {e.kind}
+                  {e.name}, {e.kind}
                 </button>
               </li>
             ))}
@@ -173,7 +173,7 @@ export default function App() {
           <h3>{c.education.title}</h3>
           <ul>
             {[...c.education.studies, ...c.education.certs, ...c.education.langs].map((it) => (
-              <li key={it.text + (it.head ?? '')}>{[it.head, it.text, it.meta].filter(Boolean).join(' — ')}</li>
+              <li key={it.text + (it.head ?? '')}>{[it.head, it.text, it.meta].filter(Boolean).join(', ')}</li>
             ))}
           </ul>
         </section>

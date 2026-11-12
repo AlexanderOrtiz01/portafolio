@@ -91,7 +91,7 @@ export interface Content {
 const es: Content = {
   ui: {
     role: 'Desarrollador de Software · QA Analyst',
-    kicker: 'Portafolio — 2026',
+    kicker: 'Portafolio · 2026',
     headline: ['Software,', 'hecho y probado.'],
     lede: 'Soy Edwin Villalta, desarrollador de software y QA Analyst en El Salvador. Abre el libro para ver mi trabajo.',
     open: 'Abrir el libro',
@@ -150,7 +150,7 @@ const es: Content = {
       logo: ['mineducyt', 'qr-suite'],
       kind: 'MINEDUCYT · Web',
       kicker: 'MINEDUCYT',
-      when: 'JUL. 2026 — HOY',
+      when: 'DESDE JUL. 2026',
       title: 'Códigos QR dinámicos',
       sub: 'Desarrollador de Software y QA Analyst · Ministerio de Educación, Ciencia y Tecnología',
       body:
@@ -213,7 +213,7 @@ const es: Content = {
       items: [
         { text: 'IA para agilizar la selección de candidatos.' },
         { text: 'Blockchain como base de una plataforma descentralizada.' },
-        { head: 'Mi paso por Magneto HR', text: 'Soporte técnico y empresarial, ene. – may. 2026.' },
+        { head: 'Mi paso por Magneto HR', text: 'Soporte técnico y empresarial, de enero a mayo de 2026.' },
       ],
       stack: ['IA', 'Blockchain', 'Plataforma web'],
       fig: 'Candidatos, coincidencias y bloques',
@@ -240,7 +240,7 @@ const es: Content = {
       name: 'Calidad de software',
       kind: 'Experiencia · QA',
       kicker: 'EXPERIENCIA',
-      when: '2024 — 2026',
+      when: '2024 A 2026',
       title: 'Calidad, de punta a punta.',
       sub: 'QA manual y automatizado bajo Scrum',
       body:
@@ -249,18 +249,18 @@ const es: Content = {
         {
           head: 'QA Analyst · Devlync Tech Company',
           logo: 'devlync',
-          meta: 'ABR. – MAY. 2026',
+          meta: 'ABR. A MAY. 2026',
           text: 'Lideré el ciclo completo de QA: diseño de pruebas, ambientes, ejecución y cierre de defectos.',
         },
         {
           head: 'QA Analyst · Tecnologías Informáticas Roots',
           logo: 'roots',
-          meta: 'ENE. 2025 – MAR. 2026',
+          meta: 'ENE. 2025 A MAR. 2026',
           text: 'Estrategias de pruebas manuales, funcionales, de integración y automatizadas.',
         },
         {
           head: 'Instructor de Programación · UGB',
-          meta: 'ABR. – JUN. 2024',
+          meta: 'ABR. A JUN. 2024',
           text: 'Enseñanza de lógica de programación y desarrollo de software.',
         },
       ],
@@ -374,7 +374,7 @@ const es: Content = {
 const en: Content = {
   ui: {
     role: 'Software Developer · QA Analyst',
-    kicker: 'Portfolio — 2026',
+    kicker: 'Portfolio · 2026',
     headline: ['Software,', 'built and tested.'],
     lede: "I'm Edwin Villalta, a software developer and QA analyst in El Salvador. Open the book to see my work.",
     open: 'Open the book',
@@ -433,7 +433,7 @@ const en: Content = {
       logo: ['mineducyt', 'qr-suite'],
       kind: 'MINEDUCYT · Web',
       kicker: 'MINEDUCYT',
-      when: 'JUL 2026 — NOW',
+      when: 'SINCE JUL 2026',
       title: 'Dynamic QR codes',
       sub: "Software Developer & QA Analyst · El Salvador's Ministry of Education, Science and Technology",
       body:
@@ -496,7 +496,7 @@ const en: Content = {
       items: [
         { text: 'AI to speed up candidate selection.' },
         { text: 'Blockchain as the base of a decentralised platform.' },
-        { head: 'My time at Magneto HR', text: 'Technical and business support, Jan – May 2026.' },
+        { head: 'My time at Magneto HR', text: 'Technical and business support, January to May 2026.' },
       ],
       stack: ['AI', 'Blockchain', 'Web platform'],
       fig: 'Candidates, matches and blocks',
@@ -522,7 +522,7 @@ const en: Content = {
       name: 'Software quality',
       kind: 'Experience · QA',
       kicker: 'EXPERIENCE',
-      when: '2024 — 2026',
+      when: '2024 TO 2026',
       title: 'Quality, end to end.',
       sub: 'Manual and automated QA under Scrum',
       body:
@@ -531,18 +531,18 @@ const en: Content = {
         {
           head: 'QA Analyst · Devlync Tech Company',
           logo: 'devlync',
-          meta: 'APR – MAY 2026',
+          meta: 'APR TO MAY 2026',
           text: 'Led the full QA cycle: test design, environments, execution and defect closure.',
         },
         {
           head: 'QA Analyst · Tecnologías Informáticas Roots',
           logo: 'roots',
-          meta: 'JAN 2025 – MAR 2026',
+          meta: 'JAN 2025 TO MAR 2026',
           text: 'Manual, functional, integration and automated testing strategies.',
         },
         {
           head: 'Programming Instructor · UGB',
-          meta: 'APR – JUN 2024',
+          meta: 'APR TO JUN 2024',
           text: 'Taught programming logic and software development.',
         },
       ],
