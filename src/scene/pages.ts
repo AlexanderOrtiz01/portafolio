@@ -599,17 +599,27 @@ export class PageSet {
         this.redraw(i);
       }
     });
-    const playing = id >= 0 && this.pages[id].def.poster !== undefined ? id : -1;
-    if (playing !== this.playingId) {
-      const prev = this.playingId;
-      this.playingId = playing;
-      if (prev >= 0) {
-        this.pages[prev].st.playing = false;
-        this.redraw(prev);
-      }
-      if (playing >= 0) this.pages[playing].st.playing = true;
-    }
     return over;
+  }
+
+  /**
+   * Plays the film on page `id`, if it has one, and pauses any other; -1 pauses them all.
+   * A film starts from its first frame each time its page comes into view.
+   */
+  play(id: number) {
+    const playing = id >= 0 && id < this.pages.length && this.pages[id].def.poster !== undefined ? id : -1;
+    if (playing === this.playingId) return;
+    const prev = this.playingId;
+    this.playingId = playing;
+    if (prev >= 0) {
+      this.pages[prev].st.playing = false;
+      this.redraw(prev);
+    }
+    if (playing >= 0) {
+      this.pages[playing].st.playing = true;
+      this.pages[playing].st.time = 0;
+      this.sinceFrame = 1;
+    }
   }
 
   update(dt: number) {

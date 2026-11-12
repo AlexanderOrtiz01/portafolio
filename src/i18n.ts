@@ -122,7 +122,7 @@ const es: Content = {
     label: 'ÍNDICE',
     note: 'Elige una entrada para saltar a esa página.',
   },
-  play: { idle: 'PASA EL CURSOR PARA REPRODUCIR', playing: 'REPRODUCIENDO' },
+  play: { idle: 'EN PAUSA', playing: 'REPRODUCIENDO' },
   profile: {
     name: 'Perfil',
     kind: 'Sobre mí',
@@ -405,7 +405,7 @@ const en: Content = {
     label: 'INDEX',
     note: 'Pick an entry to jump to that page.',
   },
-  play: { idle: 'HOVER TO PLAY', playing: 'PLAYING' },
+  play: { idle: 'PAUSED', playing: 'PLAYING' },
   profile: {
     name: 'Profile',
     kind: 'About me',

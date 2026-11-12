@@ -25,7 +25,7 @@ function woodUrl() {
 /**
  * The same book built from CSS 3D transforms instead of WebGL, for browsers whose graphics card is
  * off. The cover swings open, pages turn on their spine, the view leans toward the cursor, and the
- * films still play on hover. It only needs the browser's compositor, which runs without a GPU.
+ * films play by themselves. It only needs the browser's compositor, which runs without a GPU.
  */
 export function FlatBook({
   content,
@@ -94,8 +94,8 @@ export function FlatBook({
   }, [pages]);
 
   useEffect(() => {
-    const noHover = window.matchMedia('(hover: none)').matches;
-    pages.hover(noHover && open && spread < SHEETS ? spread * 2 : -1);
+    // The film on the right-hand page of the open spread plays by itself.
+    pages.play(open && spread < SHEETS ? spread * 2 : -1);
     const atEnd = spread >= SHEETS && (!single || side === 'R');
     onState({ open, spread, spreads: SHEETS + 1, canNext: !atEnd });
   }, [pages, onState, open, spread, side, single]);

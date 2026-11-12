@@ -36,7 +36,6 @@ export class Stage {
   private raf = 0;
   private observer: ResizeObserver;
   private reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  private noHover = window.matchMedia('(hover: none)').matches;
   /** On upright screens a spread is too wide to read, so the camera frames one page at a time. */
   private focus: 'L' | 'R' = 'R';
   private focusX = 0;
@@ -346,6 +345,8 @@ export class Stage {
   /** Runs every frame: the book moves under a still pointer, so hover cannot wait for events. */
   private hover() {
     const book = this.book;
+    // The film on the right-hand page of the open spread plays by itself.
+    this.pages.play(book.isOpen ? this.pageId('R') : -1);
     if (book.isDragging) {
       this.raycaster.setFromCamera(this.ndc, this.camera);
       const x = book.planeX(this.raycaster.ray);
@@ -358,8 +359,7 @@ export class Stage {
     book.setCoverHover(hit?.kind === 'cover');
     if (hit?.kind !== 'page') {
       book.setPeel(null);
-      // Without a cursor there is no hover: the film on show simply plays.
-      this.pages.hover(this.noHover && book.isOpen ? this.pageId('R') : -1);
+      this.pages.hover(-1);
       this.setCursor(hit ? 'pointer' : 'default');
       return;
     }
