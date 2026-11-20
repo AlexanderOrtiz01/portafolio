@@ -9,5 +9,7 @@ import '@fontsource/jetbrains-mono/500.css';
 import './styles.css';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { trackVisit } from './track';
 
 createRoot(document.getElementById('root')!).render(<App />);
+trackVisit();
