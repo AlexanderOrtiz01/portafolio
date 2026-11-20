@@ -234,19 +234,41 @@ const casePage =
 
 const PANEL = { x: 56, y: 56, w: PW - 112, h: 716 };
 
-const filmPage =
-  (index: number, visual: Visual, pick: (c: Content) => CaseText): PageDraw =>
-  (ctx, c, st) => {
+/** The film itself: the dark panel and the frame of its visual at `st.time`. */
+function filmPanel(ctx: Ctx, visual: Visual, c: Content, st: DrawState) {
+  ctx.save();
+  rr(ctx, PANEL.x, PANEL.y, PANEL.w, PANEL.h, 20);
+  ctx.fillStyle = '#111111';
+  ctx.fill();
+  ctx.clip();
+  ctx.translate(PANEL.x, PANEL.y);
+  visual(ctx, PANEL.w, PANEL.h, st.time, c);
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+/** Repaints the paper the panel's rounded corners leave showing: the only pixels outside it a frame touches. */
+const CORNER = 24;
+function panelCorners(ctx: Ctx) {
+  ctx.save();
+  ctx.beginPath();
+  for (const x of [PANEL.x, PANEL.x + PANEL.w - CORNER])
+    for (const y of [PANEL.y, PANEL.y + PANEL.h - CORNER]) ctx.rect(x, y, CORNER, CORNER);
+  ctx.clip();
+  paper(ctx, 'R');
+  ctx.restore();
+}
+
+const filmPage = (index: number, visual: Visual, pick: (c: Content) => CaseText): Pick<PageDef, 'draw' | 'frame'> => ({
+  // A playing frame changes only the panel: the paper, captions and status around it stay as drawn.
+  frame: (ctx, c, st) => {
+    panelCorners(ctx);
+    filmPanel(ctx, visual, c, st);
+    return [];
+  },
+  draw: (ctx, c, st) => {
     paper(ctx, 'R');
-    ctx.save();
-    rr(ctx, PANEL.x, PANEL.y, PANEL.w, PANEL.h, 20);
-    ctx.fillStyle = '#111111';
-    ctx.fill();
-    ctx.clip();
-    ctx.translate(PANEL.x, PANEL.y);
-    visual(ctx, PANEL.w, PANEL.h, st.time, c);
-    ctx.restore();
-    ctx.globalAlpha = 1;
+    filmPanel(ctx, visual, c, st);
 
     if (!st.playing) {
       // Paused: veil the frame and show the play button.
@@ -277,7 +299,8 @@ const filmPage =
     ctx.arc(PW - 60 - lw - 22, 831, 8, 0, Math.PI * 2);
     ctx.fill();
     return [];
-  };
+  },
+});
 
 const skillsPage: PageDraw = (ctx, c) => {
   paper(ctx, 'L');
@@ -412,6 +435,8 @@ function drawBackEndpaper(ctx: Ctx, c: Content) {
 
 interface PageDef {
   draw: PageDraw;
+  /** For film pages: draws only what changes from one playing frame to the next, over a full `draw`. */
+  frame?: PageDraw;
   /** For film pages: the paused frame shown before the first hover. */
   poster?: number;
 }
@@ -419,19 +444,19 @@ interface PageDef {
 const DEFS: PageDef[] = [
   { draw: contentsPage },
   { draw: casePage(1, (c) => c.profile, (c) => c.profile.facts) },
-  { draw: filmPage(1, VISUALS.terminal, (c) => c.profile), poster: 9.2 },
+  { ...filmPage(1, VISUALS.terminal, (c) => c.profile), poster: 9.2 },
   { draw: casePage(2, (c) => c.cases[0]) },
-  { draw: filmPage(2, VISUALS.qr, (c) => c.cases[0]), poster: 9.6 },
+  { ...filmPage(2, VISUALS.qr, (c) => c.cases[0]), poster: 9.6 },
   { draw: casePage(3, (c) => c.cases[1]) },
-  { draw: filmPage(3, VISUALS.invoice, (c) => c.cases[1]), poster: 7 },
+  { ...filmPage(3, VISUALS.invoice, (c) => c.cases[1]), poster: 7 },
   { draw: casePage(4, (c) => c.cases[2]) },
-  { draw: filmPage(4, VISUALS.english, (c) => c.cases[2]), poster: 5.6 },
+  { ...filmPage(4, VISUALS.english, (c) => c.cases[2]), poster: 5.6 },
   { draw: casePage(5, (c) => c.cases[3]) },
-  { draw: filmPage(5, VISUALS.magneto, (c) => c.cases[3]), poster: 10.2 },
+  { ...filmPage(5, VISUALS.magneto, (c) => c.cases[3]), poster: 10.2 },
   { draw: casePage(6, (c) => c.cases[4]) },
-  { draw: filmPage(6, VISUALS.eva, (c) => c.cases[4]), poster: 6.4 },
+  { ...filmPage(6, VISUALS.eva, (c) => c.cases[4]), poster: 6.4 },
   { draw: casePage(7, (c) => c.cases[5]) },
-  { draw: filmPage(7, VISUALS.runner, (c) => c.cases[5]), poster: 12.2 },
+  { ...filmPage(7, VISUALS.runner, (c) => c.cases[5]), poster: 12.2 },
   { draw: skillsPage },
   { draw: educationPage },
   { draw: contactPage },
@@ -515,6 +540,8 @@ export class PageSet {
   private dirty = false;
   private sinceFrame = 0;
   private queue: number[] = [];
+  /** Whether the playing page needs a full redraw before it can be updated a frame at a time. */
+  private stale = true;
 
   constructor(maxAniso: number) {
     // The pages are seen almost square-on; more filtering than this only costs frame time.
@@ -557,11 +584,14 @@ export class PageSet {
     return this.pages[id].texture;
   }
 
-  private redraw(id: number) {
+  private redraw(id: number, frameOnly = false) {
     const p = this.pages[id];
+    const frame = frameOnly ? p.def.frame : undefined;
+    if (id === this.playingId) this.stale = false;
     p.ctx.save();
     p.ctx.setTransform(K, 0, 0, K, 0, 0);
-    p.regions = p.def.draw(p.ctx, this.content, p.st);
+    if (frame) frame(p.ctx, this.content, p.st);
+    else p.regions = p.def.draw(p.ctx, this.content, p.st);
     p.ctx.restore();
     p.texture.needsUpdate = true;
     this.dirty = true;
@@ -636,6 +666,7 @@ export class PageSet {
       this.pages[playing].st.playing = true;
       this.pages[playing].st.time = 0;
       this.sinceFrame = 1;
+      this.stale = true;
     }
   }
 
@@ -646,7 +677,7 @@ export class PageSet {
     this.sinceFrame += dt;
     if (this.sinceFrame < 1 / 31) return;
     this.sinceFrame = 0;
-    this.redraw(this.playingId);
+    this.redraw(this.playingId, !this.stale);
   }
 
   dispose() {
