@@ -1,11 +1,13 @@
 name = "portfolio-visits"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
+workers_dev = true
+preview_urls = false
 
 # Create with: npx wrangler kv namespace create VISITS
 [[kv_namespaces]]
 binding = "VISITS"
-id = "REPLACE_WITH_KV_ID"
+id = "eb72c9b17499490a8a297aede7903557"
 
 [vars]
 ALLOWED_ORIGIN = "https://alexanderortiz01.github.io"
