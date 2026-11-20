@@ -514,6 +514,7 @@ export class PageSet {
   private playingId = -1;
   private dirty = false;
   private sinceFrame = 0;
+  private queue: number[] = [];
 
   constructor(maxAniso: number) {
     // The pages are seen almost square-on; more filtering than this only costs frame time.
@@ -527,9 +528,16 @@ export class PageSet {
     [this.cover, this.front, this.back] = sp.map((s) => s.texture);
   }
 
-  setContent(c: Content) {
+  /**
+   * Redraws the book for new content. Pages listed in `now` (all of them when omitted) are drawn at
+   * once; the rest wait in a queue that `drainOne` empties a page per frame, so a language switch
+   * never freezes the page for the whole book at once.
+   */
+  setContent(c: Content, now?: number[]) {
     this.content = c;
-    this.pages.forEach((_, i) => this.redraw(i));
+    const first = now ?? this.pages.map((_, i) => i);
+    first.forEach((i) => this.pages[i] && this.redraw(i));
+    this.queue = this.pages.map((_, i) => i).filter((i) => !first.includes(i));
     [drawCover, drawFrontEndpaper, drawBackEndpaper].forEach((draw, i) => {
       const ctx = this.special[i];
       ctx.save();
@@ -539,6 +547,14 @@ export class PageSet {
     });
     this.cover.needsUpdate = this.front.needsUpdate = this.back.needsUpdate = true;
     this.dirty = true;
+  }
+
+  /** Draws one page still waiting from `setContent`, and returns its texture for uploading. */
+  drainOne(): THREE.Texture | null {
+    const id = this.queue.shift();
+    if (id === undefined) return null;
+    this.redraw(id);
+    return this.pages[id].texture;
   }
 
   private redraw(id: number) {
