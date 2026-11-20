@@ -52,6 +52,40 @@ function runTween(t: Tween, now: number): { value: number; done: boolean } {
   return { value: lerp(t.from, t.to, t.ease(p)), done: p >= 1 };
 }
 
+let grid: { uv: THREE.BufferAttribute; index: THREE.BufferAttribute } | null = null;
+function sheetGrid() {
+  if (grid) return grid;
+  const uv = new Float32Array((SU + 1) * (SV + 1) * 2);
+  const index = new Uint16Array(SU * SV * 6);
+  let t = 0;
+  for (let j = 0; j <= SV; j++) {
+    for (let k = 0; k <= SU; k++) {
+      const n = j * (SU + 1) + k;
+      uv[n * 2] = k / SU;
+      uv[n * 2 + 1] = 1 - j / SV;
+      if (j < SV && k < SU) {
+        const b = n + SU + 1;
+        index.set([n, b, n + 1, b, b + 1, n + 1], t);
+        t += 6;
+      }
+    }
+  }
+  grid = { uv: new THREE.BufferAttribute(uv, 2), index: new THREE.BufferAttribute(index, 1) };
+  return grid;
+}
+
+// Per-column terms of the curl that never change, sampled at the middle of each segment.
+const CURL = new Float32Array(SU);
+const LEAD = new Float32Array(SU);
+const PEEL = new Float32Array(SU);
+const SLOPE = new Float32Array(SU);
+for (let k = 0; k < SU; k++) {
+  const sm = (k + 0.5) / SU;
+  CURL[k] = 0.95 * (Math.pow(sm, 1.4) - 0.42);
+  LEAD[k] = 0.7 * sm * sm;
+  PEEL[k] = 1.3 * smooth(0.5, 1, sm);
+}
+
 export class Book {
   readonly group = new THREE.Group();
   /** Number of sheets turned in the state the book is heading to: the current spread. */
@@ -127,23 +161,14 @@ export class Book {
   private makeSheet(pages: PageSet, i: number): Sheet {
     const geo = new THREE.BufferGeometry();
     const count = (SU + 1) * (SV + 1);
-    const uv = new Float32Array(count * 2);
-    const index: number[] = [];
-    for (let j = 0; j <= SV; j++) {
-      for (let k = 0; k <= SU; k++) {
-        const n = j * (SU + 1) + k;
-        uv[n * 2] = k / SU;
-        uv[n * 2 + 1] = 1 - j / SV;
-        if (j < SV && k < SU) {
-          const a = n;
-          const b = n + SU + 1;
-          index.push(a, b, a + 1, b, b + 1, a + 1);
-        }
-      }
-    }
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
-    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-    geo.setIndex(index);
+    geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+    // Every sheet shares one grid: the uv and index buffers are built and uploaded once.
+    const grid = sheetGrid();
+    geo.setAttribute('uv', grid.uv);
+    geo.setIndex(grid.index);
+    // Sheets skip frustum culling and hit tests use their own maths, so a fixed bound will do.
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 4);
 
     // Paper is matt, so the cheapest lit material is also the right one.
     const backTex = pages.pages[i * 2 + 1].texture;
@@ -440,33 +465,65 @@ export class Book {
     const rest = lerp(CT + (N - i) * TH, CT + (i + 1) * TH, e);
     const fold = Math.pow(Math.cos(Math.PI * e), 2);
     const climb = Math.min(1.2, (3 * Math.max(0, rest - gutterY) * fold) / GUTTER);
-    const slope = (sm: number) => {
-      const g = 1 - (sm * W) / GUTTER;
-      return g > 0 ? climb * g * g : 0;
-    };
     let risen = 0;
-    for (let k = 0; k < SU; k++) risen += Math.sin(slope((k + 0.5) / SU)) * du;
+    for (let k = 0; k < SU; k++) {
+      const g = 1 - (((k + 0.5) / SU) * W) / GUTTER;
+      const slope = g > 0 ? climb * g * g : 0;
+      SLOPE[k] = side * slope;
+      risen += Math.sin(slope) * du;
+    }
     const y0 = rest - risen;
     for (let j = 0; j <= SV; j++) {
       const v = j / SV;
       const cw = Math.pow(Math.max(0, 1 - Math.abs(v - s.corner) / 1.15), 2);
-      let x = 0;
+      const lead = s.lead * cw;
+      const peel = side * s.peel * cw;
+      const z = (v - 0.5) * H;
+      let x = pageX;
       let y = y0;
-      for (let k = 0; k <= SU; k++) {
-        const n = (j * (SU + 1) + k) * 3;
-        arr[n] = pageX + x;
+      for (let k = 0, n = j * (SU + 1) * 3; k <= SU; k++, n += 3) {
+        arr[n] = x;
         arr[n + 1] = y;
-        arr[n + 2] = (v - 0.5) * H;
-        const sm = (k + 0.5) / SU;
-        const curl = mid * (0.95 * (Math.pow(sm, 1.4) - 0.42) + s.lead * 0.7 * cw * sm * sm);
-        const peel = side * s.peel * 1.3 * cw * smooth(0.5, 1, sm);
-        const a = clamp(base + curl + peel + side * slope(sm), 0, Math.PI);
+        arr[n + 2] = z;
+        if (k === SU) break;
+        const a = clamp(base + mid * (CURL[k] + lead * LEAD[k]) + peel * PEEL[k] + SLOPE[k], 0, Math.PI);
         x += Math.cos(a) * du;
         y += Math.sin(a) * du;
       }
     }
     pos.needsUpdate = true;
-    s.geo.computeVertexNormals();
-    s.geo.computeBoundingSphere();
+    this.normals(s.geo, arr);
+  }
+
+  /**
+   * Smooth normals straight from the grid: the cross of the across-page and along-page
+   * tangents at each vertex, wound like the triangles so the front face keeps pointing up.
+   */
+  private normals(geo: THREE.BufferGeometry, p: Float32Array) {
+    const attr = geo.attributes.normal as THREE.BufferAttribute;
+    const out = attr.array as Float32Array;
+    const row = (SU + 1) * 3;
+    for (let j = 0; j <= SV; j++) {
+      const jm = j > 0 ? -row : 0;
+      const jp = j < SV ? row : 0;
+      for (let k = 0, n = j * row; k <= SU; k++, n += 3) {
+        const km = k > 0 ? n - 3 : n;
+        const kp = k < SU ? n + 3 : n;
+        const ux = p[kp] - p[km];
+        const uy = p[kp + 1] - p[km + 1];
+        const uz = p[kp + 2] - p[km + 2];
+        const vx = p[n + jp] - p[n + jm];
+        const vy = p[n + jp + 1] - p[n + jm + 1];
+        const vz = p[n + jp + 2] - p[n + jm + 2];
+        const nx = vy * uz - vz * uy;
+        const ny = vz * ux - vx * uz;
+        const nz = vx * uy - vy * ux;
+        const l = 1 / (Math.sqrt(nx * nx + ny * ny + nz * nz) || 1);
+        out[n] = nx * l;
+        out[n + 1] = ny * l;
+        out[n + 2] = nz * l;
+      }
+    }
+    attr.needsUpdate = true;
   }
 }
