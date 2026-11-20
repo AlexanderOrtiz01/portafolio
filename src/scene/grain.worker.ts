@@ -49,6 +49,9 @@ function draw(out: number, size: number, bump: boolean) {
   ctx.translate(0, out);
   ctx.scale(out / size, -out / size);
   grain(ctx, size, bump);
+  // The canvas only records the ~30k calls; reading one pixel makes them rasterize now, while the worker
+  // waits, instead of when the main thread first uploads the bitmap (a third of a second's stall there).
+  ctx.getImageData(0, 0, 1, 1);
   return canvas.transferToImageBitmap();
 }
 

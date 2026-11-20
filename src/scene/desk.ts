@@ -125,11 +125,15 @@ export function makeDesk(aniso: number, onChange: () => void) {
       t.anisotropy = aniso;
     }
     // A glossy standard material reads as lacquer at a fraction of the cost of a real clearcoat layer.
+    // The two images go up on separate frames, so neither upload makes one long task of the other.
     mat.map?.dispose();
-    mat.bumpMap?.dispose();
     mat.map = map;
-    mat.bumpMap = bump;
     onChange();
+    requestAnimationFrame(() => {
+      mat.bumpMap?.dispose();
+      mat.bumpMap = bump;
+      onChange();
+    });
   });
   const desk = new THREE.Mesh(new THREE.PlaneGeometry(44, 44).rotateX(-Math.PI / 2), mat);
   // Drawn last, so the pixels hidden under the book and the objects are never shaded.
@@ -238,11 +242,11 @@ export function makePencil() {
     m.position.x = x;
     g.add(m);
   };
-  part(
-    new THREE.CylinderGeometry(r, r, 0.78, 6),
-    new THREE.MeshPhysicalMaterial({ color: 0xece8df, roughness: 0.35, clearcoat: 0.6, flatShading: true }),
-    0,
-  );
+  // The six faces are flat through their own normals rather than `flatShading`, so the body shares the
+  // porcelain's shader program instead of costing a second clearcoat compile at load.
+  const body = new THREE.CylinderGeometry(r, r, 0.78, 6).toNonIndexed();
+  body.computeVertexNormals();
+  part(body, new THREE.MeshPhysicalMaterial({ color: 0xece8df, roughness: 0.35, clearcoat: 0.6 }), 0);
   part(new THREE.CylinderGeometry(0.0045, r * 0.96, 0.075, 24), new THREE.MeshStandardMaterial({ color: 0xc9a27a, roughness: 0.8 }), 0.4275);
   part(new THREE.CylinderGeometry(0.0004, 0.0045, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.4 }), 0.475);
   part(
