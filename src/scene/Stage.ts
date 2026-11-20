@@ -53,6 +53,7 @@ export class Stage {
   private slowRuns = 0;
   /** Textures redrawn for a new language that still have to reach the graphics card. */
   private uploads: THREE.Texture[] = [];
+  private disposed = false;
 
   constructor(
     host: HTMLElement,
@@ -129,7 +130,8 @@ export class Stage {
     this.scene.add(lamp, lamp.target, new THREE.HemisphereLight(0x8a93a6, 0x000000, 0.1));
 
     const aniso = renderer.capabilities.getMaxAnisotropy();
-    this.scene.add(makeDesk(aniso));
+    // The wood is drawn off the main thread; the scene is redrawn once it arrives.
+    this.scene.add(makeDesk(aniso, () => (this.stale = true)));
 
     // The cup and the plant sit behind the book, where they stay in frame once it opens;
     // the pencil and the cards wait to its right.
@@ -147,8 +149,10 @@ export class Stage {
     this.scene.add(cup, succulent, pencil, cards);
 
     this.pages = new PageSet(aniso);
-    this.pages.setContent(content);
     this.book = new Book(this.pages);
+    // Only the cover is drawn and uploaded up front; the pages follow one per frame (see setContent),
+    // so starting the book never blocks the page in one long task.
+    this.setContent(content);
     this.book.onChange = () => this.emit();
     this.scene.add(this.book.group);
 
@@ -163,9 +167,15 @@ export class Stage {
     canvas.addEventListener('webglcontextlost', this.onLost);
     canvas.addEventListener('webglcontextrestored', this.onRestored);
     this.resize();
-    this.warm();
     this.emit();
-    this.tick();
+    // Shaders compile in the background where the browser can (KHR_parallel_shader_compile), instead
+    // of freezing the first frame; the loop starts once they are ready.
+    renderer
+      .compileAsync(this.scene, this.camera)
+      .catch(() => undefined)
+      .then(() => {
+        if (!this.disposed) this.tick();
+      });
     if (import.meta.env.DEV) (window as unknown as { __stage: Stage }).__stage = this;
   }
 
@@ -192,11 +202,6 @@ export class Stage {
     this.stale = true;
   }
 
-  /** Sends every page to the graphics card now, so that no page turn has to wait for its texture. */
-  private warm() {
-    for (const t of this.pages.textures) this.renderer.initTexture(t);
-    this.stale = true;
-  }
   open = () => {
     this.focus = 'R';
     this.book.open();
@@ -232,6 +237,7 @@ export class Stage {
   }
 
   dispose() {
+    this.disposed = true;
     cancelAnimationFrame(this.raf);
     window.clearTimeout(this.lostTimer);
     this.observer.disconnect();

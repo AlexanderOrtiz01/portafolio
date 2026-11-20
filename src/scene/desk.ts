@@ -60,23 +60,76 @@ export function grain(ctx: CanvasRenderingContext2D, size: number, bump: boolean
   }
 }
 
-export function makeDesk(aniso: number) {
-  const size = 2048;
+/** Draws the grain on the main thread, the fallback when there is no worker or OffscreenCanvas. */
+function grainOnMainThread(size: number) {
   const map = canvasTexture(size, size, (ctx) => grain(ctx, size, false));
   // The relief is the same drawing at half the size: it only has to roughen the light.
   const bump = canvasTexture(size / 2, size / 2, (ctx) => (ctx.scale(0.5, 0.5), grain(ctx, size, true)), false);
-  for (const t of [map, bump]) {
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.repeat.set(7, 12);
-    t.anisotropy = aniso;
+  return { map, bump };
+}
+
+/** The grain is ~30k canvas calls, so it is drawn in a worker (or deferred) and swapped in when ready. */
+function loadGrain(size: number, done: (t: { map: THREE.Texture; bump: THREE.Texture }) => void) {
+  const fallback = () => {
+    const run = () => done(grainOnMainThread(size));
+    if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 1500 });
+    else setTimeout(run, 200);
+  };
+  if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined') return fallback();
+  let worker: Worker;
+  try {
+    worker = new Worker(new URL('./grain.worker.ts', import.meta.url), { type: 'module' });
+  } catch {
+    return fallback();
   }
-  // A glossy standard material reads as lacquer at a fraction of the cost of a real clearcoat layer.
+  worker.onmessage = (e: MessageEvent<{ map: ImageBitmap; bump: ImageBitmap }>) => {
+    worker.terminate();
+    const wrap = (img: ImageBitmap, srgb: boolean) => {
+      const t = new THREE.Texture(img);
+      // The worker already drew the bitmap upside down, matching a flipped canvas upload.
+      t.flipY = false;
+      if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+      t.needsUpdate = true;
+      return t;
+    };
+    done({ map: wrap(e.data.map, true), bump: wrap(e.data.bump, false) });
+  };
+  worker.onerror = (e) => {
+    e.preventDefault();
+    worker.terminate();
+    fallback();
+  };
+  worker.postMessage({ size });
+}
+
+export function makeDesk(aniso: number, onChange: () => void) {
+  // One-pixel stand-ins until the grain arrives: the material already has a map and a bump map, so
+  // the shader built for the first frame is the final one and swapping the images recompiles nothing.
+  const pixel = (r: number, g: number, b: number, srgb: boolean) => {
+    const t = new THREE.DataTexture(new Uint8Array([r, g, b, 255]), 1, 1);
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    t.needsUpdate = true;
+    return t;
+  };
   const mat = new THREE.MeshStandardMaterial({
-    map,
-    bumpMap: bump,
+    map: pixel(0x2e, 0x24, 0x1a, true),
+    bumpMap: pixel(128, 128, 128, false),
     bumpScale: 0.18,
     roughness: 0.3,
     envMapIntensity: 0.55,
+  });
+  loadGrain(2048, ({ map, bump }) => {
+    for (const t of [map, bump]) {
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(7, 12);
+      t.anisotropy = aniso;
+    }
+    // A glossy standard material reads as lacquer at a fraction of the cost of a real clearcoat layer.
+    mat.map?.dispose();
+    mat.bumpMap?.dispose();
+    mat.map = map;
+    mat.bumpMap = bump;
+    onChange();
   });
   const desk = new THREE.Mesh(new THREE.PlaneGeometry(44, 44).rotateX(-Math.PI / 2), mat);
   // Drawn last, so the pixels hidden under the book and the objects are never shaded.

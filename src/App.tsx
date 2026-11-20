@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatBook, type BookControls } from './FlatBook';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import type { BookControls } from './FlatBook';
 import { CONTENT, EMAIL, LINKEDIN, detectLang, tocEntries, type Lang } from './i18n';
-import { Stage, type StageState } from './scene/Stage';
-import { loadAssets } from './scene/pages';
+import type { Stage, StageState } from './scene/Stage';
+
+// three.js is only fetched after first paint: the 3D stage and the flat fallback both load lazily.
+const FlatBook = lazy(() => import('./FlatBook').then((m) => ({ default: m.FlatBook })));
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
@@ -27,17 +29,23 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    loadAssets().then(() => {
-      if (cancelled || !hostRef.current) return;
-      try {
-        const stage = new Stage(hostRef.current, CONTENT[langRef.current], setState, goFlat);
-        stageRef.current = stage;
-        book.current = stage;
-        setMode('3d');
-      } catch {
-        goFlat();
-      }
-    });
+    Promise.all([import('./scene/Stage'), import('./scene/pages')]).then(
+      ([{ Stage }, { loadAssets }]) =>
+        loadAssets().then(() => {
+          if (cancelled || !hostRef.current) return;
+          try {
+            const stage = new Stage(hostRef.current, CONTENT[langRef.current], setState, goFlat);
+            stageRef.current = stage;
+            book.current = stage;
+            setMode('3d');
+          } catch {
+            goFlat();
+          }
+        }),
+      () => {
+        if (!cancelled) goFlat();
+      },
+    );
     return () => {
       cancelled = true;
       stageRef.current?.dispose();
@@ -62,7 +70,11 @@ export default function App() {
 
   return (
     <div className="app" data-open={open} data-ready={mode !== 'loading'} data-mode={mode} ref={hostRef}>
-      {mode === 'flat' && <FlatBook content={c} onState={setState} controls={book} />}
+      {mode === 'flat' && (
+        <Suspense fallback={null}>
+          <FlatBook content={c} onState={setState} controls={book} />
+        </Suspense>
+      )}
       <div className="vignette" aria-hidden="true" />
 
       <header className="nav">
