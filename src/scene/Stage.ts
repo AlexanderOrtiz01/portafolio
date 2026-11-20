@@ -86,6 +86,11 @@ export class Stage {
       renderer.dispose();
       throw new Error(`Software renderer: ${name}`);
     }
+    // Integrated and mobile graphics share memory bandwidth with the processor and run out of fill rate
+    // long before the scene runs out of detail, so they start on a lighter tier instead of waiting for
+    // the pacer to step down (each step reallocates the framebuffers, a visible hitch).
+    const light = /Intel|Iris|UHD|Radeon(?!.*\bRX\b)|Renoir|Vega|Mali|Adreno|PowerVR|Apple GPU/i.test(name);
+    if (light) this.ratio = Math.min(this.ratio, 1.25);
     host.prepend(canvas);
     renderer.setPixelRatio(this.ratio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -120,12 +125,15 @@ export class Stage {
     lamp.position.set(-2.4, 6.2, 2.6);
     lamp.target.position.set(0, 0, -0.1);
     lamp.castShadow = true;
-    lamp.shadow.mapSize.set(2048, 2048);
+    // A quarter of the texels on the lighter tier, with half the blur radius in texels so the penumbra
+    // keeps the same width on the desk: the shadow pass and its filtering cost far less, and look alike.
+    const shadowSize = light ? 1024 : 2048;
+    lamp.shadow.mapSize.set(shadowSize, shadowSize);
     lamp.shadow.camera.near = 2;
     lamp.shadow.camera.far = 14;
     lamp.shadow.bias = -0.0003;
     lamp.shadow.normalBias = 0.012;
-    lamp.shadow.radius = 2.2;
+    lamp.shadow.radius = 2.2 * (shadowSize / 2048);
     this.lamp = lamp;
     this.scene.add(lamp, lamp.target, new THREE.HemisphereLight(0x8a93a6, 0x000000, 0.1));
 
