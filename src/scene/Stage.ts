@@ -51,12 +51,6 @@ export class Stage {
   private paceSum = 0;
   private paceN = 0;
   private slowRuns = 0;
-  private shadowFrame = 0;
-  private shadowOwed = false;
-  private ratioOwed = false;
-  /** Whether the camera or a sheet moved this frame, and for how many frames neither has. */
-  private moving = false;
-  private calm = 0;
   /** Textures redrawn for a new language that still have to reach the graphics card. */
   private uploads: THREE.Texture[] = [];
 
@@ -491,26 +485,11 @@ export class Stage {
     const moved = this.placeCamera(dt);
     this.hover();
     const turned = this.book.update(dt);
-    this.moving = moved || turned;
     this.pages.update(dt);
     const queued = this.pages.drainOne() ?? this.uploads.shift();
     if (queued) this.renderer.initTexture(queued);
-    // The shadow pass is the dearest part of a frame. While a sheet turns, the lamp's shadow map is
-    // redrawn every other frame, which the eye cannot tell apart, and once more when the sheet lands.
-    let settle = false;
-    if (turned) {
-      this.shadowOwed = true;
-      this.shadowFrame = (this.shadowFrame + 1) % 2;
-      if (this.shadowFrame === 0) {
-        this.renderer.shadowMap.needsUpdate = true;
-        this.shadowOwed = false;
-      }
-    } else if (this.shadowOwed) {
-      this.renderer.shadowMap.needsUpdate = true;
-      this.shadowOwed = false;
-      settle = true;
-    }
-    return this.pages.takeDirty() || moved || turned || settle;
+    if (turned) this.renderer.shadowMap.needsUpdate = true;
+    return this.pages.takeDirty() || moved || turned;
   }
 
   private tick = () => {
@@ -519,13 +498,6 @@ export class Stage {
     const active = this.step(Math.min(elapsed, 0.05));
     if (active || this.stale) this.idle = 0;
     else this.idle++;
-    this.calm = this.moving ? 0 : this.calm + 1;
-    if (this.ratioOwed && this.calm === 3) {
-      this.ratioOwed = false;
-      // setPixelRatio resizes the drawing buffer itself; the camera keeps its aspect.
-      this.renderer.setPixelRatio(this.ratio);
-      this.idle = 0;
-    }
     this.stale = false;
     // Only frames where something changed are drawn, plus one settling frame. A film playing at
     // 30 frames a second therefore costs 30 renders a second, not 60.
@@ -542,18 +514,15 @@ export class Stage {
     if (elapsed > 0.08) return;
     this.paceSum += elapsed;
     if (++this.paceN < 40) return;
-    const avg = this.paceSum / this.paceN;
-    const slow = avg > 1 / 45;
+    const slow = this.paceSum / this.paceN > 1 / 36;
     this.paceSum = this.paceN = 0;
     this.slowRuns = slow ? this.slowRuns + 1 : 0;
-    if (this.slowRuns < 2 || this.ratio <= 0.75) return;
+    if (this.slowRuns < 3 || this.ratio <= 0.75) return;
     this.slowRuns = 0;
-    // One step sized to the shortfall (cost follows pixel count), instead of many small ones:
-    // every change of resolution reallocates the framebuffers and costs a visible hitch.
-    const need = Math.sqrt((1 / 55) / Math.max(1e-3, avg));
-    this.ratio = Math.max(0.75, this.ratio * Math.min(0.9, Math.max(0.65, need)));
-    // Applied once the camera and the sheets rest, where reallocating the framebuffers cannot be seen.
-    this.ratioOwed = true;
+    this.ratio = Math.max(0.75, this.ratio * 0.85);
+    // setPixelRatio already resizes the drawing buffer; a second resize would reallocate it again.
+    this.renderer.setPixelRatio(this.ratio);
+    this.stale = true;
   }
 
   /** Development aid: runs the simulation forward without waiting for frames. */
