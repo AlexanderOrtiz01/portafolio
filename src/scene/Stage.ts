@@ -54,6 +54,7 @@ export class Stage {
   /** Textures redrawn for a new language that still have to reach the graphics card. */
   private uploads: THREE.Texture[] = [];
   private disposed = false;
+  private latest?: Content;
 
   constructor(
     host: HTMLElement,
@@ -92,6 +93,9 @@ export class Stage {
     const light = /Intel|Iris|UHD|Radeon(?!.*\bRX\b)|Renoir|Vega|Mali|Adreno|PowerVR|Apple GPU/i.test(name);
     if (light) this.ratio = Math.min(this.ratio, 1.25);
     host.prepend(canvas);
+    // Checking every shader for errors makes each compile wait on the driver (40–90 ms apiece);
+    // the shaders are fixed, so that check only earns its keep during development.
+    renderer.debug.checkShaderErrors = import.meta.env.DEV;
     renderer.setPixelRatio(this.ratio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -103,21 +107,6 @@ export class Stage {
     this.renderer = renderer;
     this.scene.background = new THREE.Color(0x000000);
 
-    // A dark room with one warm panel, so the lacquer and the porcelain have something to reflect.
-    const room = new THREE.Scene();
-    room.background = new THREE.Color(0x020202);
-    const glow = (color: THREE.Color, w: number, h: number, x: number, y: number, z: number) => {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }));
-      m.position.set(x, y, z);
-      m.lookAt(0, 0, 0);
-      room.add(m);
-    };
-    glow(new THREE.Color(2.4, 1.7, 1.1), 7, 2.6, -2.5, 6, -9);
-    glow(new THREE.Color(0.5, 0.62, 0.85), 5, 5, 10, 4, 3);
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    this.scene.environment = pmrem.fromScene(room, 0.035).texture;
-    this.scene.environmentIntensity = 0.4;
-    pmrem.dispose();
 
     // The lamp: one warm spot with a wide, soft edge.
     // It hangs in front and to the left, so its glare on the lacquer falls outside the frame.
@@ -158,9 +147,6 @@ export class Stage {
 
     this.pages = new PageSet(aniso);
     this.book = new Book(this.pages);
-    // Only the cover is drawn and uploaded up front; the pages follow one per frame (see setContent),
-    // so starting the book never blocks the page in one long task.
-    this.setContent(content);
     this.book.onChange = () => this.emit();
     this.scene.add(this.book.group);
 
@@ -176,20 +162,14 @@ export class Stage {
     canvas.addEventListener('webglcontextrestored', this.onRestored);
     this.resize();
     this.emit();
-    // Shaders compile in the background where the browser can (KHR_parallel_shader_compile), instead
-    // of freezing the first frame; the loop starts once they are ready.
-    renderer
-      .compileAsync(this.scene, this.camera)
-      .catch(() => undefined)
-      .then(() => {
-        if (!this.disposed) this.tick();
-      });
+    void this.start(content);
     if (import.meta.env.DEV) (window as unknown as { __stage: Stage }).__stage = this;
   }
 
   /* ------------------------------------------------------------ API */
 
   setContent(c: Content) {
+    this.latest = c;
     this.canvas.setAttribute('aria-label', c.ui.canvasLabel);
     // Only what is in view changes language at once; every other page is redrawn and uploaded one
     // per frame afterwards, so switching language never stalls the page.
@@ -242,6 +222,50 @@ export class Stage {
   private setFocus(side: 'L' | 'R') {
     this.focus = side;
     this.emit();
+  }
+
+  /**
+   * The rest of the start-up, in steps with a yield to the browser between them, so that no single
+   * task blocks the page for long. The loop starts once everything the first frame needs is ready.
+   */
+  private async start(content: Content) {
+    const breathe = () => new Promise<void>((r) => setTimeout(r, 0));
+    await breathe();
+    if (this.disposed) return;
+    // A dark room with one warm panel, so the lacquer and the porcelain have something to reflect.
+    const room = new THREE.Scene();
+    room.background = new THREE.Color(0x020202);
+    const glow = (color: THREE.Color, w: number, h: number, x: number, y: number, z: number) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }));
+      m.position.set(x, y, z);
+      m.lookAt(0, 0, 0);
+      room.add(m);
+    };
+    glow(new THREE.Color(2.4, 1.7, 1.1), 7, 2.6, -2.5, 6, -9);
+    glow(new THREE.Color(0.5, 0.62, 0.85), 5, 5, 10, 4, 3);
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment = pmrem.fromScene(room, 0.035).texture;
+    this.scene.environmentIntensity = 0.4;
+    pmrem.dispose();
+    await breathe();
+    if (this.disposed) return;
+    // Only the cover is drawn and uploaded up front; the pages follow one per frame (see setContent).
+    // A language switch during start-up already set newer content; that one wins.
+    this.setContent(this.latest ?? content);
+    await breathe();
+    if (this.disposed) return;
+    // Every shader program is created now, and then made ready one per task: the first use of a
+    // program waits for the driver to finish linking it, and many drivers (ANGLE on Vulkan among
+    // them) do not link in the background. Left to the first frame, that wait is one long freeze.
+    const materials = this.renderer.compile(this.scene, this.camera);
+    for (const m of materials) {
+      await breathe();
+      if (this.disposed) return;
+      const props = this.renderer.properties.get(m) as { currentProgram?: { getUniforms(): unknown } };
+      props.currentProgram?.getUniforms();
+    }
+    await breathe();
+    if (!this.disposed) this.tick();
   }
 
   dispose() {
