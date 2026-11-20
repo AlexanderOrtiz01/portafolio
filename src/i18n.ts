@@ -146,12 +146,12 @@ const es: Content = {
   },
   cases: [
     {
-      name: 'Códigos QR dinámicos',
+      name: 'QRSuite',
       logo: ['mineducyt', 'qr-suite'],
       kind: 'MINEDUCYT · Web',
       kicker: 'MINEDUCYT',
       when: 'DESDE JUL. 2026',
-      title: 'Códigos QR dinámicos',
+      title: 'QRSuite',
       sub: 'Desarrollador de Software y QA Analyst · Ministerio de Educación, Ciencia y Tecnología',
       body:
         'Aplicación web institucional para generar, personalizar y administrar códigos QR dinámicos con acortador de URL bajo dominio del Ministerio, para el material educativo impreso.',
@@ -429,12 +429,12 @@ const en: Content = {
   },
   cases: [
     {
-      name: 'Dynamic QR codes',
+      name: 'QRSuite',
       logo: ['mineducyt', 'qr-suite'],
       kind: 'MINEDUCYT · Web',
       kicker: 'MINEDUCYT',
       when: 'SINCE JUL 2026',
-      title: 'Dynamic QR codes',
+      title: 'QRSuite',
       sub: "Software Developer & QA Analyst · El Salvador's Ministry of Education, Science and Technology",
       body:
         "Institutional web app to generate, customise and manage dynamic QR codes, with a URL shortener on the Ministry's own domain, for printed educational material.",
@@ -657,7 +657,7 @@ export const CONTENT: Record<Lang, Content> = { es, en };
 
 /** The platforms shown as a row of logos on the profile page: logo file and the name to fall back on. */
 export const PLATFORMS: [string, string][] = [
-  ['qr-suite', 'QR Suite'],
+  ['qr-suite', 'QRSuite'],
   ['electrodte', 'ElectroDTE'],
   ['direct-english', 'Direct English'],
   ['magnetohr', 'MagnetoHR'],
