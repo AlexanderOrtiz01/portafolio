@@ -124,6 +124,9 @@ export class Stage {
     lamp.shadow.bias = -0.0003;
     lamp.shadow.normalBias = 0.012;
     lamp.shadow.radius = 2.2 * (shadowSize / 2048);
+    // A room is never lit by the lamp alone: let some light into the shadows, or the cover, as it
+    // lifts, drops a near-black slab over the pages and the desk beside them.
+    lamp.shadow.intensity = 0.62;
     this.lamp = lamp;
     this.scene.add(lamp, lamp.target, new THREE.HemisphereLight(0x8a93a6, 0x000000, 0.1));
 
