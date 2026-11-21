@@ -144,10 +144,12 @@ export class Stage {
     const cards = makeCards();
     cards.position.set(1.95, 0, 0.86);
     cards.rotation.y = -0.22;
-    // The laptop sits back to the book's left, open on ElectroDTE; the camera leaves it behind once the book opens.
+    // The laptop sits to the left of the book, clear of where the open spread lies
+    // (it reaches x = -1.7, z = -0.54), so the pages never pass under it.
     const laptop = makeLaptop(aniso, () => (this.stale = true));
-    laptop.position.set(-1.9, 0, -0.2);
-    laptop.rotation.y = 0.34;
+    laptop.scale.setScalar(0.85);
+    laptop.position.set(-2.62, 0, -0.18);
+    laptop.rotation.y = 0.5;
     this.scene.add(cup, succulent, pencil, cards, laptop);
 
     this.pages = new PageSet(aniso);
