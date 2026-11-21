@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Content } from '../i18n';
 import { Book } from './book';
 import { makeCappuccino, makeCards, makeDesk, makePencil, makeSucculent } from './desk';
+import { makeLaptop } from './laptop';
 import { clamp, easeInOut, smooth } from './draw';
 import { PageSet, SHEETS } from './pages';
 
@@ -143,7 +144,11 @@ export class Stage {
     const cards = makeCards();
     cards.position.set(1.95, 0, 0.86);
     cards.rotation.y = -0.22;
-    this.scene.add(cup, succulent, pencil, cards);
+    // The laptop sits back to the book's left, open on ElectroDTE; the camera leaves it behind once the book opens.
+    const laptop = makeLaptop(aniso, () => (this.stale = true));
+    laptop.position.set(-1.9, 0, -0.2);
+    laptop.rotation.y = 0.34;
+    this.scene.add(cup, succulent, pencil, cards, laptop);
 
     this.pages = new PageSet(aniso);
     this.book = new Book(this.pages);
