@@ -273,12 +273,12 @@ const es: Content = {
     title: 'Habilidades',
     kicker: 'CAJA DE HERRAMIENTAS',
     groups: [
-      { head: 'Desarrollo', text: 'React, Vite, Tailwind CSS, Node.js, Firebase (Auth y Firestore)' },
+      { head: 'Desarrollo web (Frontend)', text: 'HTML5, CSS3, React 19 con Vite, Bootstrap, Tailwind CSS, jQuery · sitios responsivos' },
       { head: 'Calidad (QA)', text: 'Pruebas funcionales, de integración, de regresión, unitarias y de estrés' },
       { head: 'Automatización', text: 'Selenium, Playwright, Cypress, Vitest' },
-      { head: 'APIs y datos', text: 'Postman para APIs REST, PostgreSQL (SQL), Firestore' },
+      { head: 'Backend y bases de datos', text: 'Node.js, PostgreSQL, Firebase (Auth y Firestore), Postman para APIs REST' },
       { head: 'Flujo de trabajo', text: 'Git, GitHub Actions, Vercel, Jira, Azure DevOps, Chrome DevTools' },
-      { head: 'Lenguajes y métodos', text: 'JavaScript, Python, PHP · Scrum, Kanban, cascada' },
+      { head: 'Lenguajes y métodos', text: 'JavaScript, Python, SQL, PHP · Scrum, Kanban, cascada' },
     ],
   },
   education: {
@@ -555,12 +555,12 @@ const en: Content = {
     title: 'Skills',
     kicker: 'TOOLBOX',
     groups: [
-      { head: 'Development', text: 'React, Vite, Tailwind CSS, Node.js, Firebase (Auth and Firestore)' },
+      { head: 'Web development (Frontend)', text: 'HTML5, CSS3, React 19 with Vite, Bootstrap, Tailwind CSS, jQuery · responsive sites' },
       { head: 'Quality (QA)', text: 'Functional, integration, regression, unit and stress testing' },
       { head: 'Automation', text: 'Selenium, Playwright, Cypress, Vitest' },
-      { head: 'APIs and data', text: 'Postman for REST APIs, PostgreSQL (SQL), Firestore' },
+      { head: 'Backend and databases', text: 'Node.js, PostgreSQL, Firebase (Auth and Firestore), Postman for REST APIs' },
       { head: 'Workflow', text: 'Git, GitHub Actions, Vercel, Jira, Azure DevOps, Chrome DevTools' },
-      { head: 'Languages and methods', text: 'JavaScript, Python, PHP · Scrum, Kanban, waterfall' },
+      { head: 'Languages and methods', text: 'JavaScript, Python, SQL, PHP · Scrum, Kanban, waterfall' },
     ],
   },
   education: {
