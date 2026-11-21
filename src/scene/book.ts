@@ -110,7 +110,7 @@ export class Book {
   private ray = new THREE.Ray();
 
   constructor(pages: PageSet) {
-    const board = new THREE.MeshStandardMaterial({ color: 0x1c3a5e, roughness: 0.82, envMapIntensity: 0.5 });
+    const board = new THREE.MeshStandardMaterial({ color: 0x1f4a3a, roughness: 0.82, envMapIntensity: 0.5 });
     const art = (map: THREE.Texture) => new THREE.MeshStandardMaterial({ map, roughness: 0.82, envMapIntensity: 0.5 });
     const shadows = (m: THREE.Mesh, cast = true) => {
       m.castShadow = cast;
