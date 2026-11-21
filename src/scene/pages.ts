@@ -376,7 +376,7 @@ function cloth(ctx: Ctx, base: string, seed: number) {
 }
 
 function drawCover(ctx: Ctx, c: Content) {
-  cloth(ctx, '#0b0b0b', 3);
+  cloth(ctx, '#1c3a5e', 3);
   const foil = '#EDE7DA';
   text(ctx, c.cover.top, 96, 124, { font: mono(24, 500), color: foil, spacing: 7 });
   text(ctx, c.cover.year, CW - 96, 124, { font: mono(24, 500), color: foil, spacing: 7, align: 'right' });
