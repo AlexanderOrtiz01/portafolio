@@ -132,10 +132,10 @@ const es: Content = {
     title: 'Construyo software y lo pruebo antes de que falle.',
     sub: 'Desarrollador de Software · QA Analyst · Ingeniería en Sistemas (5.º año)',
     body:
-      'Hoy desarrollo, en equipo, una aplicación web institucional para el MINEDUCYT, desde el análisis de requerimientos hasta la puesta en producción. Mi paso previo por QA me permite entregar software mantenible, probado y alineado con los criterios de aceptación.',
+      'Desarrollé, en equipo, una aplicación web institucional para el MINEDUCYT, en prácticas profesionales por convenio universitario, desde el análisis de requerimientos hasta la puesta en producción. Mi experiencia en QA me permite entregar software mantenible y probado.',
     items: [],
     facts: [
-      ['Ahora', 'MINEDUCYT · Desarrollo de Software'],
+      ['Reciente', 'MINEDUCYT · Prácticas profesionales'],
       ['Antes', 'QA en Devlync y Roots'],
       ['Estudios', 'Universidad Gerardo Barrios'],
       ['Idiomas', 'Español nativo · Inglés B1'],
@@ -150,11 +150,11 @@ const es: Content = {
       logo: ['mineducyt', 'qr-suite'],
       kind: 'MINEDUCYT · Web',
       kicker: 'MINEDUCYT',
-      when: 'DESDE JUL. 2026',
+      when: 'JUL. A NOV. 2026',
       title: 'QRSuite',
-      sub: 'Desarrollador de Software y QA Analyst · Ministerio de Educación, Ciencia y Tecnología',
+      sub: 'Ingeniero de Software y QA Analyst · Prácticas profesionales (convenio universitario)',
       body:
-        'Aplicación web institucional para generar, personalizar y administrar códigos QR dinámicos con acortador de URL bajo dominio del Ministerio, para el material educativo impreso.',
+        'Aplicación web institucional para generar, personalizar y administrar códigos QR dinámicos con acortador de URL bajo dominio del Ministerio, para el material educativo impreso. Contrato finalizado el 11 de noviembre de 2026.',
       items: [
         { text: 'Principal contribuidor del repositorio: más del 70 % de los commits.' },
         { text: 'Acceso con Google (Firebase Auth) y Firestore con reglas de seguridad y roles.' },
@@ -320,7 +320,7 @@ const es: Content = {
   back: { thanks: ['¿Construimos algo', 'y lo probamos?'], sign: 'ESCRÍBEME Y LO HABLAMOS' },
   terminal: [
     ['whoami', 'edwin villalta · desarrollador de software y qa analyst'],
-    ['cat ahora.txt', 'app web institucional para el MINEDUCYT'],
+    ['cat reciente.txt', 'mineducyt · prácticas profesionales (jul.–nov. 2026)'],
     ['stack --top', 'react · node.js · firebase · postgresql'],
     ['qa --tools', 'selenium · playwright · cypress · jmeter · postman'],
     ['estudios', 'ing. en sistemas informáticos y redes · 5.º año'],
@@ -415,10 +415,10 @@ const en: Content = {
     title: 'I build software and test it before it breaks.',
     sub: 'Software Developer · QA Analyst · Systems Engineering (5th year)',
     body:
-      'Today I build, as part of a team, an institutional web app for MINEDUCYT, from requirements analysis through to production. My earlier years in QA let me ship software that is maintainable, tested and true to its acceptance criteria.',
+      'I built, as part of a team, an institutional web app for MINEDUCYT, as a university-agreement professional internship, from requirements analysis through to production. My years in QA let me ship software that is maintainable and tested.',
     items: [],
     facts: [
-      ['Now', 'MINEDUCYT · Software Development'],
+      ['Latest', 'MINEDUCYT · Professional internship'],
       ['Before', 'QA at Devlync and Roots'],
       ['Studies', 'Universidad Gerardo Barrios'],
       ['Languages', 'Spanish native · English B1'],
@@ -433,11 +433,11 @@ const en: Content = {
       logo: ['mineducyt', 'qr-suite'],
       kind: 'MINEDUCYT · Web',
       kicker: 'MINEDUCYT',
-      when: 'SINCE JUL 2026',
+      when: 'JUL TO NOV 2026',
       title: 'QRSuite',
-      sub: "Software Developer & QA Analyst · El Salvador's Ministry of Education, Science and Technology",
+      sub: 'Software Engineer & QA Analyst · Professional internship (university agreement)',
       body:
-        "Institutional web app to generate, customise and manage dynamic QR codes, with a URL shortener on the Ministry's own domain, for printed educational material.",
+        "Institutional web app to generate, customise and manage dynamic QR codes, with a URL shortener on the Ministry's own domain, for printed educational material. Contract completed on 11 November 2026.",
       items: [
         { text: 'Lead contributor to the repository: over 70% of the commits.' },
         { text: 'Google sign-in (Firebase Auth) and Firestore with security rules and roles.' },
@@ -602,7 +602,7 @@ const en: Content = {
   back: { thanks: ["Let's build something", 'and test it.'], sign: 'DROP ME A LINE' },
   terminal: [
     ['whoami', 'edwin villalta · software developer & qa analyst'],
-    ['cat now.txt', 'institutional web app for MINEDUCYT'],
+    ['cat latest.txt', 'mineducyt · professional internship (jul–nov 2026)'],
     ['stack --top', 'react · node.js · firebase · postgresql'],
     ['qa --tools', 'selenium · playwright · cypress · jmeter · postman'],
     ['studies', 'computer systems & network engineering · 5th year'],
