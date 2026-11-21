@@ -376,7 +376,7 @@ function cloth(ctx: Ctx, base: string, seed: number) {
 }
 
 function drawCover(ctx: Ctx, c: Content) {
-  cloth(ctx, '#1f4a3a', 3);
+  cloth(ctx, '#6b1f2a', 3);
   const foil = '#EDE7DA';
   text(ctx, c.cover.top, 96, 124, { font: mono(24, 500), color: foil, spacing: 7 });
   text(ctx, c.cover.year, CW - 96, 124, { font: mono(24, 500), color: foil, spacing: 7, align: 'right' });
@@ -391,7 +391,7 @@ function drawCover(ctx: Ctx, c: Content) {
 }
 
 function drawFrontEndpaper(ctx: Ctx, c: Content) {
-  cloth(ctx, '#183b2e', 5);
+  cloth(ctx, '#4e161f', 5);
   text(ctx, c.endpaper.line1.toUpperCase(), 120, 380, { font: mono(20), color: FG_DIM, spacing: 3 });
   text(ctx, c.endpaper.line2, 114, 470, { font: display(92), color: FG, spacing: -3 });
   line(ctx, 120, 520, 760, 520, 'rgba(243,242,238,0.25)', 2);
@@ -402,7 +402,7 @@ function drawFrontEndpaper(ctx: Ctx, c: Content) {
 }
 
 function drawBackEndpaper(ctx: Ctx, c: Content) {
-  cloth(ctx, '#183b2e', 9);
+  cloth(ctx, '#4e161f', 9);
   c.back.thanks.forEach((l, i) => text(ctx, l, 114, 410 + i * 100, { font: display(92), color: FG, spacing: -3 }));
   line(ctx, 120, 560, 760, 560, 'rgba(243,242,238,0.25)', 2);
   text(ctx, c.back.sign, 120, 620, { font: mono(20, 500), color: ACCENT, spacing: 3 });

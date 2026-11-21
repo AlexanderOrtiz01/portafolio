@@ -455,7 +455,7 @@ h1 {
 }
 
 .fb-board {
-  background: #1f4a3a;
+  background: #6b1f2a;
 }
 
 /* Boards overhang the pages a little. */
@@ -468,7 +468,7 @@ h1 {
 .fb-base {
   box-shadow:
     0 50px 90px rgba(0, 0, 0, 0.75),
-    -4px 0 0 #1f4a3a;
+    -4px 0 0 #6b1f2a;
 }
 
 .fb-cover > .fb-face {
